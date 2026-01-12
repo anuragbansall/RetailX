@@ -36,7 +36,7 @@ beforeEach(async () => {
  * If the route is not yet implemented, this test will fail — the
  * in-memory DB setup is ready either way.
  */
-describe("POST /auth/register", () => {
+describe("POST /api/auth/register", () => {
   it("creates a new user and returns 201", async () => {
     const payload = {
       username: "johndoe",
@@ -46,7 +46,7 @@ describe("POST /auth/register", () => {
     };
 
     const res = await request(app)
-      .post("/auth/register")
+      .post("/api/auth/register")
       .send(payload)
       .set("Accept", "application/json");
 
@@ -73,10 +73,10 @@ describe("POST /auth/register", () => {
     };
 
     // First registration
-    await request(app).post("/auth/register").send(payload);
+    await request(app).post("/api/auth/register").send(payload);
     // Duplicate registration
     const res = await request(app)
-      .post("/auth/register")
+      .post("/api/auth/register")
       .send({
         ...payload,
         username: "janedoe2",
@@ -85,4 +85,3 @@ describe("POST /auth/register", () => {
     expect([400, 409]).toContain(res.status);
   });
 });
-    

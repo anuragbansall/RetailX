@@ -36,6 +36,11 @@ export const register = async (req, res) => {
       addresses: savedUser.addresses,
     });
   } catch (error) {
+    // Handle race condition errors when unique index constraint is violated (duplicate key error 11000)
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
     console.error("Error during user registration:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
