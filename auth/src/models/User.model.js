@@ -33,6 +33,7 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
+      select: false, // do not return password field by default
     },
     fullName: UserFullNameSchema,
     role: {
