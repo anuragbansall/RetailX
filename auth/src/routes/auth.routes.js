@@ -1,18 +1,11 @@
 import express from "express";
-import bcrypt from "bcryptjs";
-import User from "../models/User.model.js";
+
+import { register } from "../controllers/auth.controller.js";
+import { registerValidation } from "../validations/auth.validation.js";
+import validateRequest from "../middlewares/validateRequest.js";
 
 const authRouter = express.Router();
 
-authRouter.post("/register", async (req, res) => {
-  const { username, email, password, fullName } = req.body;
-
-  return res.status(201).json({
-    id: "mockedUserId",
-    username,
-    email,
-    fullName,
-  });
-});
+authRouter.post("/register", registerValidation, validateRequest, register);
 
 export default authRouter;
