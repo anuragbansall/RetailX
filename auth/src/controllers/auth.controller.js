@@ -56,5 +56,42 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  return res.status(501).json({ message: "Not implemented" });
+  const { identifier, password } = req.body;
+
+  try {
+    const user = await User.findOne({
+      $or: [{ email: identifier }, { username: identifier }],
+    }).select("+password"); // Explicitly select password field for verification
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const token = generateToken({ id: user._id, role: user.role });
+
+    setAuthCookie(res, token);
+
+    return res.status(200).json({
+      message: "Login successful",
+      data: {
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role,
+          addresses: user.addresses,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error during user login:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
