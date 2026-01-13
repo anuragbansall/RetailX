@@ -36,7 +36,7 @@ beforeEach(async () => {
  * If the route is not yet implemented, this test will fail — the
  * in-memory DB setup is ready either way.
  */
-describe("POST /auth/register", () => {
+describe("POST /api/auth/register", () => {
   it("creates a new user and returns 201", async () => {
     const payload = {
       username: "johndoe",
@@ -46,7 +46,7 @@ describe("POST /auth/register", () => {
     };
 
     const res = await request(app)
-      .post("/auth/register")
+      .post("/api/auth/register")
       .send(payload)
       .set("Accept", "application/json");
 
@@ -73,10 +73,10 @@ describe("POST /auth/register", () => {
     };
 
     // First registration
-    await request(app).post("/auth/register").send(payload);
+    await request(app).post("/api/auth/register").send(payload);
     // Duplicate registration
     const res = await request(app)
-      .post("/auth/register")
+      .post("/api/auth/register")
       .send({
         ...payload,
         username: "janedoe2",
@@ -84,5 +84,173 @@ describe("POST /auth/register", () => {
 
     expect([400, 409]).toContain(res.status);
   });
+
+  it("rejects weak passwords (missing complexity) with 400", async () => {
+    const payload = {
+      username: "weakpassuser",
+      email: "weak@example.com",
+      password: "password", // no uppercase, number, or special char
+      fullName: { firstName: "Weak", lastName: "User" },
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect(res.status).toBe(400);
+    expect(res.body?.message).toBeDefined();
+  });
+
+  it("rejects invalid email format with 400", async () => {
+    const payload = {
+      username: "bademailuser",
+      email: "not-an-email",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "Bad", lastName: "Email" },
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect(res.status).toBe(400);
+    expect(res.body?.message).toBeDefined();
+  });
+
+  it("rejects role escalation to admin with 400", async () => {
+    const payload = {
+      username: "tryadmin",
+      email: "tryadmin@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "Try", lastName: "Admin" },
+      role: "admin",
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect(res.status).toBe(400);
+    const userInDb = await User.findOne({ email: payload.email });
+    expect(userInDb).toBeFalsy();
+  });
+
+  it("does not leak password in response payload", async () => {
+    const payload = {
+      username: "noleakuser",
+      email: "noleak@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "No", lastName: "Leak" },
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect([200, 201]).toContain(res.status);
+    expect(res.body?.data?.user?.password).toBeUndefined();
+  });
+
+  it("sets secure auth cookie with HttpOnly, Secure, SameSite flags", async () => {
+    const payload = {
+      username: "cookieuser",
+      email: "cookie@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "Cookie", lastName: "User" },
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect([200, 201]).toContain(res.status);
+    const setCookie = res.headers["set-cookie"] || [];
+    const cookieStr = Array.isArray(setCookie)
+      ? setCookie.join(";")
+      : String(setCookie || "");
+    expect(cookieStr).toMatch(/HttpOnly/i);
+    expect(cookieStr).toMatch(/Secure/i);
+    expect(cookieStr).toMatch(/SameSite=Strict/i);
+  });
+
+  it("rejects non-array addresses with 400", async () => {
+    const payload = {
+      username: "badaddresses",
+      email: "badaddresses@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "Bad", lastName: "Addresses" },
+      addresses: { street: "123 Main" }, // should be array
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects usernames with illegal characters with 400", async () => {
+    const payload = {
+      username: "john.doe", // dot not allowed per validation
+      email: "john.doe@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "John", lastName: "Doe" },
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects duplicate usernames with 400/409", async () => {
+    const payload1 = {
+      username: "dupuser",
+      email: "dup1@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "Dup", lastName: "One" },
+    };
+
+    const payload2 = {
+      username: "dupuser", // duplicate username
+      email: "dup2@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "Dup", lastName: "Two" },
+    };
+
+    const res1 = await request(app).post("/api/auth/register").send(payload1);
+    expect([200, 201]).toContain(res1.status);
+
+    const res2 = await request(app).post("/api/auth/register").send(payload2);
+    expect([400, 409]).toContain(res2.status);
+  });
+
+  it("ignores unknown fields to prevent mass assignment", async () => {
+    const payload = {
+      username: "massassign",
+      email: "massassign@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "Mass", lastName: "Assign" },
+      isAdmin: true, // not in schema
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect([200, 201]).toContain(res.status);
+    const userInDb = await User.findOne({ email: payload.email });
+    expect(userInDb).toBeTruthy();
+    // @ts-expect-error: field should not exist
+    expect(userInDb.isAdmin).toBeUndefined();
+  });
 });
-    
