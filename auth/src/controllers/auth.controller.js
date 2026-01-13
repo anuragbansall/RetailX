@@ -42,7 +42,6 @@ export const register = async (req, res) => {
           role: savedUser.role,
           addresses: savedUser.addresses,
         },
-
       },
     });
   } catch (error) {
@@ -54,4 +53,8 @@ export const register = async (req, res) => {
     console.error("Error during user registration:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
+};
+
+export const login = async (req, res) => {
+  return res.status(501).json({ message: "Not implemented" });
 };

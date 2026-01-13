@@ -79,3 +79,5 @@ export const registerValidation = [
     .withMessage("country must be a string")
     .trim(),
 ];
+
+export const loginValidation = [];
