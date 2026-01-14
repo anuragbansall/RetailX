@@ -56,7 +56,7 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { identifier, password } = req.body;
+  const { identifier, password } = req.body; // identifier is being set in validation middleware by zod via customSanitizer
 
   try {
     const user = await User.findOne({
