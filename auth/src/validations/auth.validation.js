@@ -113,5 +113,5 @@ export const loginValidation = [
   body("identifier")
     .customSanitizer((value, { req }) => req.body.email || req.body.username)
     .exists({ checkFalsy: true })
-    .withMessage("identifier is required"),
+    .withMessage("Username or email is required"),
 ];
