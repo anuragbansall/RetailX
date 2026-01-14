@@ -152,7 +152,7 @@ describe("POST /api/auth/register", () => {
     expect(cookieStr).toMatch(/SameSite=Strict/i);
 
     // Secure is only expected in production
-    if (config.nodeEnv === "production") {
+    if (config.NODE_ENV === "production") {
       expect(cookieStr).toMatch(/Secure/i);
     }
   });
