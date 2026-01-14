@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: retailx-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  auth:
+    build: .
+    container_name: retailx-auth
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Service
+      PORT: "3000"
+      NODE_ENV: production
+      # Database - points to the 'mongo' service
+      MONGO_URI: mongodb://mongo:27017/auth
+      # Set a strong secret in real deployments
+      JWT_SECRET: change-me
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:
