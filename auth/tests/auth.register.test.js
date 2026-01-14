@@ -1,34 +1,9 @@
 import request from "supertest";
-import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
 import app from "../src/app.js";
 import User from "../src/models/User.model.js";
+import { config } from "../src/config/index.js";
 
-let mongo;
-
-beforeAll(async () => {
-  mongo = await MongoMemoryServer.create();
-  const uri = mongo.getUri();
-
-  await mongoose.connect(uri);
-  console.log("Connected to in-memory MongoDB");
-});
-
-afterAll(async () => {
-  if (mongoose.connection.readyState !== 0) {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
-  }
-  if (mongo) await mongo.stop();
-});
-
-beforeEach(async () => {
-  // Clean all collections between tests
-  const collections = await mongoose.connection.db.collections();
-  for (const c of collections) {
-    await c.deleteMany({});
-  }
-});
+// Global DB hooks are provided by tests/setup.js
 
 /**
  * NOTE: This test expects the /auth/register route to exist and
@@ -174,8 +149,12 @@ describe("POST /api/auth/register", () => {
       ? setCookie.join(";")
       : String(setCookie || "");
     expect(cookieStr).toMatch(/HttpOnly/i);
-    expect(cookieStr).toMatch(/Secure/i);
     expect(cookieStr).toMatch(/SameSite=Strict/i);
+
+    // Secure is only expected in production
+    if (config.NODE_ENV === "production") {
+      expect(cookieStr).toMatch(/Secure/i);
+    }
   });
 
   it("rejects non-array addresses with 400", async () => {

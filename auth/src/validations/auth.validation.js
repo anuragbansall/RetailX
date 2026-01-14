@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, oneOf } from "express-validator";
 
 // Validation rules for /auth/register
 export const registerValidation = [
@@ -78,4 +78,40 @@ export const registerValidation = [
     .isString()
     .withMessage("country must be a string")
     .trim(),
+];
+
+export const loginValidation = [
+  // Require either a valid email or a valid username
+  oneOf(
+    [
+      body("email")
+        .optional()
+        .isEmail()
+        .withMessage("valid email is required when provided")
+        .normalizeEmail(),
+      body("username")
+        .optional()
+        .trim()
+        .isLength({ min: 3, max: 30 })
+        .withMessage("username must be 3-30 characters long")
+        .matches(/^[a-zA-Z0-9_]+$/)
+        .withMessage(
+          "username can contain letters, numbers, and underscores only"
+        ),
+    ],
+    "must provide a valid email or username"
+  ),
+
+  // Password must be present
+  body("password")
+    .exists({ checkFalsy: true })
+    .withMessage("password is required")
+    .isString()
+    .withMessage("password must be a string"),
+
+  // Map email/username to identifier for the controller
+  body("identifier")
+    .customSanitizer((value, { req }) => req.body.email || req.body.username)
+    .exists({ checkFalsy: true })
+    .withMessage("Username or email is required"),
 ];
