@@ -9,17 +9,22 @@ export const authenticate = async (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
+  // Check if the token is blacklisted
+  let isBlacklisted = false;
+
   try {
-    // Check if the token is blacklisted
-    const isBlacklisted = await redis.get(`bl_${token}`);
-    if (isBlacklisted) {
-      console.warn("Token is blacklisted");
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    isBlacklisted = (await redis.get(`bl_${token}`)) !== null;
+  } catch (error) {
+    console.error("Error checking token blacklist in Redis:", error);
+  }
 
-    const decoded = verifyToken(token); // if token is invalid, this will throw an error
-    req.user = decoded; // Attach decoded token data to request object
+  if (isBlacklisted) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
 
+  try {
+    const decoded = verifyToken(token);
+    req.user = decoded;
     return next();
   } catch (error) {
     return res.status(401).json({ message: "Unauthorized" });
