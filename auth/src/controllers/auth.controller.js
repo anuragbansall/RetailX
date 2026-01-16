@@ -1,7 +1,8 @@
 import User from "../models/User.model.js";
 import bcrypt from "bcryptjs";
 import { clearAuthCookie, setAuthCookie } from "../utils/cookies.js";
-import { generateToken } from "../utils/jwt.js";
+import { generateToken, verifyToken } from "../utils/jwt.js";
+import redis from "../db/redis.js";
 
 export const register = async (req, res) => {
   const { username, email, password, fullName, role, addresses } = req.body;
@@ -96,8 +97,28 @@ export const login = async (req, res) => {
   }
 };
 
-export const logout = (req, res) => {
+export const logout = async (req, res) => {
+  const token = req.cookies.token;
+
+  try {
+    if (token) {
+      // Blacklist the token in Redis with an expiration time matching the token's remaining TTL
+      const decoded = verifyToken(token);
+      const exp = decoded.exp;
+      const now = Math.floor(Date.now() / 1000);
+      const ttl = exp - now; // remaining time to live in seconds
+
+      if (ttl > 0) {
+        await redis.set(`bl_${token}`, "blacklisted", "EX", ttl);
+      }
+    }
+  } catch (error) {
+    console.error("Error during logout token blacklisting:", error);
+    // Proceed with logout even if blacklisting fails
+  }
+
   clearAuthCookie(res);
+
   return res.status(200).json({ message: "Logout successful" });
 };
 
