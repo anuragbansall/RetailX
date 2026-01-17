@@ -5,9 +5,9 @@ import { generateToken, verifyToken } from "../utils/jwt.js";
 import redis from "../db/redis.js";
 
 export const register = async (req, res) => {
-  const { username, email, password, fullName, role, addresses } = req.body;
-
   try {
+    const { username, email, password, fullName, role, addresses } = req.body;
+
     const isExistingUser = await User.findOne({
       $or: [{ email }, { username }],
     });
@@ -57,9 +57,9 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { identifier, password } = req.body; // identifier is being set in validation middleware by express-validator
-
   try {
+    const { identifier, password } = req.body; // identifier is being set in validation middleware by express-validator
+
     const user = await User.findOne({
       $or: [{ email: identifier }, { username: identifier }],
     }).select("+password"); // Explicitly select password field for verification
@@ -98,9 +98,9 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  const token = req.cookies.token;
-
   try {
+    const token = req.cookies.token;
+
     if (token) {
       // Blacklist the token in Redis with an expiration time matching the token's remaining TTL
       const decoded = verifyToken(token);
@@ -146,6 +146,93 @@ export const getProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getAllAddresses = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "User addresses fetched successfully",
+      data: {
+        addresses: user.addresses,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user addresses:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const addAddress = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { street, city, state, zipCode, country, isDefault } = req.body;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.addresses.push({
+      street,
+      city,
+      state,
+      zipCode,
+      country,
+      isDefault,
+    });
+
+    await user.save();
+
+    return res.status(201).json({
+      message: "Address added successfully",
+      data: {
+        addresses: user.addresses,
+      },
+    });
+  } catch (error) {
+    console.error("Error adding user address:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const deleteAddress = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { addressId } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const address = user.addresses.id(addressId);
+
+    if (!address) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    address.deleteOne();
+    await user.save();
+
+    return res.status(200).json({
+      message: "Address deleted successfully",
+      data: {
+        addresses: user.addresses,
+      },
+    });
+  } catch (error) {
+    console.error("Error deleting user address:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

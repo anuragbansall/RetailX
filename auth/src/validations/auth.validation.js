@@ -1,6 +1,6 @@
-import { body, oneOf } from "express-validator";
+import { body, oneOf, param } from "express-validator";
 
-// Validation rules for /auth/register
+// Validation rules for POST /auth/register
 export const registerValidation = [
   body("username")
     .trim()
@@ -78,8 +78,13 @@ export const registerValidation = [
     .isString()
     .withMessage("country must be a string")
     .trim(),
+  body("addresses.*.isDefault")
+    .optional({ nullable: true })
+    .isBoolean()
+    .withMessage("isDefault must be a boolean"),
 ];
 
+// Validation rules for POST /auth/login
 export const loginValidation = [
   // Require either a valid email or a valid username
   oneOf(
@@ -96,10 +101,10 @@ export const loginValidation = [
         .withMessage("username must be 3-30 characters long")
         .matches(/^[a-zA-Z0-9_]+$/)
         .withMessage(
-          "username can contain letters, numbers, and underscores only"
+          "username can contain letters, numbers, and underscores only",
         ),
     ],
-    "must provide a valid email or username"
+    "must provide a valid email or username",
   ),
 
   // Password must be present
@@ -114,4 +119,51 @@ export const loginValidation = [
     .customSanitizer((value, { req }) => req.body.email || req.body.username)
     .exists({ checkFalsy: true })
     .withMessage("Username or email is required"),
+];
+
+// Validation rules for POST /auth/me/addresses
+export const addAddressValidation = [
+  body("street")
+    .exists({ checkFalsy: true })
+    .withMessage("street is required")
+    .isString()
+    .withMessage("street must be a string")
+    .trim(),
+  body("city")
+    .exists({ checkFalsy: true })
+    .withMessage("city is required")
+    .isString()
+    .withMessage("city must be a string")
+    .trim(),
+  body("state")
+    .exists({ checkFalsy: true })
+    .withMessage("state is required")
+    .isString()
+    .withMessage("state must be a string")
+    .trim(),
+  body("zipCode")
+    .exists({ checkFalsy: true })
+    .withMessage("zipCode is required")
+    .isString()
+    .withMessage("zipCode must be a string")
+    .trim(),
+  body("country")
+    .exists({ checkFalsy: true })
+    .withMessage("country is required")
+    .isString()
+    .withMessage("country must be a string")
+    .trim(),
+  body("isDefault")
+    .optional({ nullable: true })
+    .isBoolean()
+    .withMessage("isDefault must be a boolean"),
+];
+
+// Validation rules for DELETE /auth/me/addresses/:addressId
+export const addressIdParamValidation = [
+  param("addressId")
+    .exists({ checkFalsy: true })
+    .withMessage("addressId is required")
+    .isMongoId()
+    .withMessage("addressId must be a valid MongoDB ObjectId"),
 ];
