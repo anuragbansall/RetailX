@@ -5,9 +5,9 @@ import { generateToken, verifyToken } from "../utils/jwt.js";
 import redis from "../db/redis.js";
 
 export const register = async (req, res) => {
-  const { username, email, password, fullName, role, addresses } = req.body;
-
   try {
+    const { username, email, password, fullName, role, addresses } = req.body;
+
     const isExistingUser = await User.findOne({
       $or: [{ email }, { username }],
     });
@@ -57,9 +57,9 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { identifier, password } = req.body; // identifier is being set in validation middleware by express-validator
-
   try {
+    const { identifier, password } = req.body; // identifier is being set in validation middleware by express-validator
+
     const user = await User.findOne({
       $or: [{ email: identifier }, { username: identifier }],
     }).select("+password"); // Explicitly select password field for verification
@@ -98,9 +98,9 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  const token = req.cookies.token;
-
   try {
+    const token = req.cookies.token;
+
     if (token) {
       // Blacklist the token in Redis with an expiration time matching the token's remaining TTL
       const decoded = verifyToken(token);
