@@ -53,6 +53,19 @@ export const registerValidation = [
     .optional()
     .isArray()
     .withMessage("addresses must be an array"),
+  body("addresses")
+    .optional()
+    .custom((addresses) => {
+      if (!Array.isArray(addresses)) return true;
+      const defaultCount = addresses.reduce(
+        (count, addr) => count + (addr && addr.isDefault === true ? 1 : 0),
+        0,
+      );
+      if (defaultCount > 1) {
+        throw new Error("Only one address can be default");
+      }
+      return true;
+    }),
   body("addresses.*.street")
     .optional({ nullable: true })
     .isString()
@@ -78,6 +91,10 @@ export const registerValidation = [
     .isString()
     .withMessage("country must be a string")
     .trim(),
+  body("addresses.*.isDefault")
+    .optional({ nullable: true })
+    .isBoolean()
+    .withMessage("isDefault must be a boolean"),
 ];
 
 // Validation rules for POST /auth/login
@@ -149,6 +166,10 @@ export const addAddressValidation = [
     .isString()
     .withMessage("country must be a string")
     .trim(),
+  body("isDefault")
+    .optional({ nullable: true })
+    .isBoolean()
+    .withMessage("isDefault must be a boolean"),
 ];
 
 // Validation rules for DELETE /auth/me/addresses/:addressId

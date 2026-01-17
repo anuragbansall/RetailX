@@ -232,4 +232,96 @@ describe("POST /api/auth/register", () => {
     // @ts-expect-error: field should not exist
     expect(userInDb.isAdmin).toBeUndefined();
   });
+
+  it("sets the first address as default when none are marked", async () => {
+    const payload = {
+      username: "addrdefaultnone",
+      email: "addrdefaultnone@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "Addr", lastName: "None" },
+      addresses: [
+        { street: "A", city: "X", state: "S", zipCode: "1", country: "C" },
+        { street: "B", city: "Y", state: "T", zipCode: "2", country: "C" },
+      ],
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect([200, 201]).toContain(res.status);
+    const addresses = res.body?.data?.user?.addresses || [];
+    expect(addresses.length).toBe(2);
+    const defaults = addresses.filter((a) => a.isDefault === true);
+    expect(defaults.length).toBe(1);
+    expect(addresses[0].isDefault).toBe(true);
+  });
+
+  it("accepts a single default address and preserves it", async () => {
+    const payload = {
+      username: "addrdefaultsingle",
+      email: "addrdefaultsingle@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "Addr", lastName: "Single" },
+      addresses: [
+        {
+          street: "A",
+          city: "X",
+          state: "S",
+          zipCode: "1",
+          country: "C",
+          isDefault: true,
+        },
+        { street: "B", city: "Y", state: "T", zipCode: "2", country: "C" },
+      ],
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect([200, 201]).toContain(res.status);
+    const addresses = res.body?.data?.user?.addresses || [];
+    expect(addresses.length).toBe(2);
+    const defaults = addresses.filter((a) => a.isDefault === true);
+    expect(defaults.length).toBe(1);
+    // The one marked default remains the default
+    expect(addresses[0].isDefault).toBe(true);
+  });
+
+  it("rejects registration when multiple addresses are marked default", async () => {
+    const payload = {
+      username: "addrdefaultmulti",
+      email: "addrdefaultmulti@example.com",
+      password: "StrongP@ssw0rd",
+      fullName: { firstName: "Addr", lastName: "Multi" },
+      addresses: [
+        {
+          street: "A",
+          city: "X",
+          state: "S",
+          zipCode: "1",
+          country: "C",
+          isDefault: true,
+        },
+        {
+          street: "B",
+          city: "Y",
+          state: "T",
+          zipCode: "2",
+          country: "C",
+          isDefault: true,
+        },
+      ],
+    };
+
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send(payload)
+      .set("Accept", "application/json");
+
+    expect(res.status).toBe(400);
+  });
 });

@@ -174,7 +174,7 @@ export const getAllAddresses = async (req, res) => {
 export const addAddress = async (req, res) => {
   try {
     const { id } = req.user;
-    const { street, city, state, zipCode, country } = req.body;
+    const { street, city, state, zipCode, country, isDefault } = req.body;
 
     const user = await User.findById(id);
 
@@ -182,7 +182,15 @@ export const addAddress = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.addresses.push({ street, city, state, zipCode, country });
+    user.addresses.push({
+      street,
+      city,
+      state,
+      zipCode,
+      country,
+      isDefault,
+    });
+
     await user.save();
 
     return res.status(201).json({

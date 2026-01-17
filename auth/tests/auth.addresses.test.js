@@ -149,6 +149,68 @@ describe("Addresses API", () => {
       expect(res.status).toBe(400);
       expect(res.body?.message).toBeDefined();
     });
+
+    it("marks the first added address as default", async () => {
+      const agent = request.agent(app);
+
+      await agent.post("/api/auth/register").send({
+        username: "firstdefaultuser",
+        email: "firstdefaultuser@example.com",
+        password: "StrongP@ssw0rd",
+        fullName: { firstName: "First", lastName: "Default" },
+      });
+
+      const addRes = await agent.post("/api/auth/me/addresses").send({
+        street: "100 Default Rd",
+        city: "Defaultville",
+        state: "DF",
+        zipCode: "10000",
+        country: "US",
+      });
+
+      expect([200, 201]).toContain(addRes.status);
+      const addresses = addRes.body?.data?.addresses || [];
+      expect(addresses.length).toBe(1);
+      expect(addresses[0].isDefault).toBe(true);
+    });
+
+    it("switches default to newly added address when isDefault=true", async () => {
+      const agent = request.agent(app);
+
+      await agent.post("/api/auth/register").send({
+        username: "switchdefaultuser",
+        email: "switchdefaultuser@example.com",
+        password: "StrongP@ssw0rd",
+        fullName: { firstName: "Switch", lastName: "Default" },
+      });
+
+      // Add first address (becomes default via model hook)
+      let res1 = await agent.post("/api/auth/me/addresses").send({
+        street: "1 Alpha St",
+        city: "A",
+        state: "AA",
+        zipCode: "11111",
+        country: "US",
+      });
+      expect([200, 201]).toContain(res1.status);
+
+      // Add second address with isDefault=true
+      let res2 = await agent.post("/api/auth/me/addresses").send({
+        street: "2 Beta Ave",
+        city: "B",
+        state: "BB",
+        zipCode: "22222",
+        country: "US",
+        isDefault: true,
+      });
+      expect([200, 201]).toContain(res2.status);
+
+      const finalAddresses = res2.body?.data?.addresses || [];
+      expect(finalAddresses.length).toBe(2);
+      const defaults = finalAddresses.filter((a) => a.isDefault === true);
+      expect(defaults.length).toBe(1);
+      expect(defaults[0].street).toBe("2 Beta Ave");
+    });
   });
 
   describe("DELETE /api/auth/me/addresses/:addressId", () => {
@@ -244,6 +306,49 @@ describe("Addresses API", () => {
       const id = new mongoose.Types.ObjectId().toString();
       const res = await agent.delete(`/api/auth/me/addresses/${id}`);
       expect(res.status).toBe(404);
+    });
+
+    it("reassigns default after deleting current default", async () => {
+      const agent = request.agent(app);
+
+      await agent.post("/api/auth/register").send({
+        username: "reassigndefault",
+        email: "reassigndefault@example.com",
+        password: "StrongP@ssw0rd",
+        fullName: { firstName: "Reassign", lastName: "Default" },
+      });
+
+      // Add two addresses: first becomes default
+      const add1 = await agent.post("/api/auth/me/addresses").send({
+        street: "10 First",
+        city: "X",
+        state: "XX",
+        zipCode: "10101",
+        country: "US",
+      });
+      expect([200, 201]).toContain(add1.status);
+      const add2 = await agent.post("/api/auth/me/addresses").send({
+        street: "20 Second",
+        city: "Y",
+        state: "YY",
+        zipCode: "20202",
+        country: "US",
+      });
+      expect([200, 201]).toContain(add2.status);
+      const add2Addresses = add2.body?.data?.addresses || [];
+      const currentDefault = add2Addresses.find((a) => a.isDefault === true);
+      expect(currentDefault).toBeTruthy();
+
+      // Delete the current default
+      const delRes = await agent.delete(
+        `/api/auth/me/addresses/${currentDefault._id}`,
+      );
+      expect(delRes.status).toBe(200);
+      const after = delRes.body?.data?.addresses || [];
+      if (after.length > 0) {
+        const newDefault = after.find((a) => a.isDefault === true);
+        expect(newDefault).toBeTruthy();
+      }
     });
   });
 });
