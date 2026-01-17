@@ -53,19 +53,6 @@ export const registerValidation = [
     .optional()
     .isArray()
     .withMessage("addresses must be an array"),
-  body("addresses")
-    .optional()
-    .custom((addresses) => {
-      if (!Array.isArray(addresses)) return true;
-      const defaultCount = addresses.reduce(
-        (count, addr) => count + (addr && addr.isDefault === true ? 1 : 0),
-        0,
-      );
-      if (defaultCount > 1) {
-        throw new Error("Only one address can be default");
-      }
-      return true;
-    }),
   body("addresses.*.street")
     .optional({ nullable: true })
     .isString()

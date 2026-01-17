@@ -291,7 +291,7 @@ describe("POST /api/auth/register", () => {
     expect(addresses[0].isDefault).toBe(true);
   });
 
-  it("rejects registration when multiple addresses are marked default", async () => {
+  it("resolves multiple default addresses by keeping the last one", async () => {
     const payload = {
       username: "addrdefaultmulti",
       email: "addrdefaultmulti@example.com",
@@ -322,6 +322,12 @@ describe("POST /api/auth/register", () => {
       .send(payload)
       .set("Accept", "application/json");
 
-    expect(res.status).toBe(400);
+    expect([200, 201]).toContain(res.status);
+    const addresses = res.body?.data?.user?.addresses || [];
+    expect(addresses.length).toBe(2);
+    const defaults = addresses.filter((a) => a.isDefault === true);
+    expect(defaults.length).toBe(1);
+    // Model middleware keeps the last marked default
+    expect(defaults[0].street).toBe("B");
   });
 });
