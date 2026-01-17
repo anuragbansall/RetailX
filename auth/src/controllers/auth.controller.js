@@ -149,3 +149,82 @@ export const getProfile = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getAllAddresses = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "User addresses fetched successfully",
+      data: {
+        addresses: user.addresses,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user addresses:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const addAddress = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { street, city, state, zipCode, country } = req.body;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.addresses.push({ street, city, state, zipCode, country });
+    await user.save();
+
+    return res.status(201).json({
+      message: "Address added successfully",
+      data: {
+        addresses: user.addresses,
+      },
+    });
+  } catch (error) {
+    console.error("Error adding user address:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const deleteAddress = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { addressId } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const address = user.addresses.id(addressId);
+
+    if (!address) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    address.deleteOne();
+    await user.save();
+
+    return res.status(200).json({
+      message: "Address deleted successfully",
+      data: {
+        addresses: user.addresses,
+      },
+    });
+  } catch (error) {
+    console.error("Error deleting user address:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
