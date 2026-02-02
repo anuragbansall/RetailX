@@ -1,0 +1,77 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Dependencies & builds
+node_modules/
+dist/
+build/
+coverage/
+.out/
+.cache/
+.parcel-cache/
+.eslintcache
+*.tsbuildinfo
+
+# Frameworks
+.next/
+.nuxt/
+.vercel/
+.serverless/
+storybook-static/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env (keep examples)
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.tox/
+.coverage*
+coverage.xml
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Test artifacts
+cypress/screenshots/
+cypress/videos/
+
+# Keys & certs
+*.pem
+*.key
+*.crt
+*.jks
+
+# Misc
+*.swp
+*.swo
+
+# Jest
+jest-results.json
