@@ -12,7 +12,7 @@ export const getMiddleware = (roles = ["user"]) => {
     }
 
     try {
-      const decoded = jwt.verify(token, config.jwtSecret);
+      const decoded = jwt.verify(token, config.JWT_SECRET);
       if (!roles.includes(decoded.role)) {
         return res.status(403).json({ message: "Forbidden: Access is denied" });
       }

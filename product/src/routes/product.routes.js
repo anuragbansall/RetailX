@@ -10,6 +10,9 @@ import {
 import validateRequest from "../middlewares/validateRequest.js";
 import { createProductValidation } from "../validations/product.validation.js";
 import { getMiddleware } from "../middlewares/auth.middleware.js";
+import upload from "../middlewares/multer.js";
+import normalizeFormData from "../middlewares/normalizeFormData.js";
+import e from "express";
 
 const productRouter = express.Router();
 
@@ -20,6 +23,8 @@ productRouter.get("/:id", getProductById);
 productRouter.post(
   "/",
   getMiddleware(["seller"]),
+  upload.array("images", 5), // Accept up to 5 images
+  normalizeFormData,
   createProductValidation,
   validateRequest,
   createProduct,

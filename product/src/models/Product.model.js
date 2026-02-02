@@ -34,7 +34,7 @@ const ProductSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
-      id: {
+      fileId: {
         type: String,
         required: true,
       },

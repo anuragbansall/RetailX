@@ -1,4 +1,5 @@
 import ProductModel from "../models/Product.model.js";
+import imagekit from "../config/imagekit.js";
 
 export const getAllProducts = (req, res) => {
   res.send("All products");
@@ -14,11 +15,27 @@ export const createProduct = async (req, res) => {
     const seller = req.user.id;
     const productData = req.body;
 
-    // TODO: Handle image uploads
+    const uploadedImages = [];
+    const files = req.files || [];
+
+    for (const file of files) {
+      const result = await imagekit.upload({
+        file: file.buffer,
+        fileName: `${Date.now()}-${file.originalname}`, // Unique file name with preserved extension
+        folder: "products",
+      });
+
+      uploadedImages.push({
+        url: result.url,
+        fileId: result.fileId,
+        thumbnail: result.thumbnailUrl,
+      });
+    }
 
     const newProduct = await ProductModel.create({
       ...productData,
       seller,
+      images: uploadedImages,
     });
 
     res.status(201).json({
