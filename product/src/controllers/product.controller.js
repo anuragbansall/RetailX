@@ -5,7 +5,31 @@ import { deleteImages } from "../utils/deleteImages.js";
 
 export const getAllProducts = async (req, res) => {
   try {
-    const products = await ProductModel.find();
+    const { search, minPrice, maxPrice, skip = 0, limit = 30 } = req.query;
+
+    const filter = {};
+
+    if (search) {
+      filter.$text = { $search: search };
+    }
+
+    if (minPrice) {
+      filter["price.amount"] = {
+        ...filter["price.amount"],
+        $gte: Number(minPrice),
+      };
+    }
+
+    if (maxPrice) {
+      filter["price.amount"] = {
+        ...filter["price.amount"],
+        $lte: Number(maxPrice),
+      };
+    }
+
+    const products = await ProductModel.find(filter)
+      .skip(Number(skip))
+      .limit(Number(limit));
 
     res.json({
       message: "Products retrieved successfully",
