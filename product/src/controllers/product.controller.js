@@ -28,8 +28,8 @@ export const getAllProducts = async (req, res) => {
     }
 
     const products = await ProductModel.find(filter)
-      .skip(Number(skip))
-      .limit(Number(limit));
+      .skip(Math.max(0, Number(skip)))
+      .limit(Math.min(30, Number(limit)));
 
     res.json({
       message: "Products retrieved successfully",
