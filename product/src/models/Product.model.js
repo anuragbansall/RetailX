@@ -51,6 +51,9 @@ const ProductSchema = new mongoose.Schema({
   },
 });
 
+// Create text index for search functionality on title, description, and category fields
+ProductSchema.index({ title: "text", description: "text", category: "text" });
+
 const ProductModel = mongoose.model("Product", ProductSchema);
 
 export default ProductModel;

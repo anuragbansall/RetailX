@@ -4,6 +4,8 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 let mongo;
 
 beforeAll(async () => {
+  // Ensure JWT is available for auth middleware during tests
+  process.env.JWT_SECRET = process.env.JWT_SECRET || "testsecret";
   mongo = await MongoMemoryServer.create();
   const uri = mongo.getUri();
   await mongoose.connect(uri);
