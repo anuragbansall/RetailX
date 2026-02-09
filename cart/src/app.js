@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "OK", message: "service is running" });
+  res.status(200).json({ status: "OK", message: "cart service is running" });
 });
 
 export default app;

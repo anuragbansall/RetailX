@@ -7,7 +7,7 @@ describe("Health endpoint", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       status: "OK",
-      message: "service is running",
+      message: "cart service is running",
     });
   });
 });
