@@ -19,25 +19,25 @@ const cartRouter = express.Router();
 cartRouter.get("/", getMiddleware("user"), getCart);
 cartRouter.post(
   "/",
-  getMiddleware("user"),
+  getMiddleware(["user"]),
   addToCartValidation,
   validateRequest,
   addToCart,
 );
 cartRouter.patch(
   "/:id",
-  getMiddleware("user"),
+  getMiddleware(["user"]),
   updateCartItemValidation,
   validateRequest,
   updateCartItem,
 );
 cartRouter.delete(
   "/:id",
-  getMiddleware("user"),
+  getMiddleware(["user"]),
   deleteCartItemValidation,
   validateRequest,
   deleteCartItem,
 );
-cartRouter.delete("/", getMiddleware("user"), clearCart);
+cartRouter.delete("/", getMiddleware(["user"]), clearCart);
 
 export default cartRouter;
