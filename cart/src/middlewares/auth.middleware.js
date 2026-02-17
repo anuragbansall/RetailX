@@ -3,7 +3,8 @@ import { config } from "../config/index.js";
 
 export const getMiddleware = (roles = ["user"]) => {
   return (req, res, next) => {
-    const token = req.cookies.token;
+    const token =
+      req.cookies.token || req.headers["authorization"]?.split(" ")[1];
 
     if (!token) {
       return res
