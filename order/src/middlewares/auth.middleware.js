@@ -3,7 +3,12 @@ import { config } from "../config/index.js";
 
 export const getMiddleware = (roles = ["user"]) => {
   return (req, res, next) => {
-    const token = req.cookies.token || req.headers.authorization.split(" ")[1];
+    const authHeader = req.headers.authorization;
+    const bearerToken =
+      typeof authHeader === "string" && authHeader.startsWith("Bearer ")
+        ? authHeader.split(" ")[1]
+        : null;
+    const token = req.cookies?.token || bearerToken;
 
     if (!token) {
       return res
