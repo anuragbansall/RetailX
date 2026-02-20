@@ -98,12 +98,15 @@ export const createOrder = async (req, res) => {
 };
 
 export const getUsersOrders = async (req, res) => {
-  // Only return orders for the authenticated user
   try {
+    const user = req.user.id;
+
+    const orders = await OrderModel.find({ user }).sort({ createdAt: -1 });
+
     res.status(200).json({
       success: true,
       message: "Orders retrieved successfully",
-      data: [], // Replace with actual orders from the database
+      data: orders,
     });
   } catch (error) {
     console.error("Error retrieving orders:", error);
@@ -112,12 +115,17 @@ export const getUsersOrders = async (req, res) => {
 };
 
 export const getSellerOrders = async (req, res) => {
-  // Only return orders for the authenticated seller
   try {
+    const seller = req.user.id;
+
+    const orders = await OrderModel.find({ "items.seller": seller }).sort({
+      createdAt: -1,
+    });
+
     res.status(200).json({
       success: true,
       message: "Seller orders retrieved successfully",
-      data: [], // Replace with actual orders from the database
+      data: orders,
     });
   } catch (error) {
     console.error("Error retrieving seller orders:", error);
@@ -127,10 +135,21 @@ export const getSellerOrders = async (req, res) => {
 
 export const getOrderById = async (req, res) => {
   try {
+    const orderId = req.params.id;
+
+    const order = await OrderModel.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "Order retrieved successfully",
-      data: { id: req.params.id },
+      data: order,
     });
   } catch (error) {
     console.error("Error retrieving order:", error);
@@ -140,10 +159,39 @@ export const getOrderById = async (req, res) => {
 
 export const cancelOrder = async (req, res) => {
   try {
+    const orderId = req.params.id;
+    const userId = req.user.id;
+
+    const order = await OrderModel.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.status === "CANCELLED") {
+      return res.status(400).json({
+        success: false,
+        message: "Order is already cancelled",
+      });
+    }
+
+    if (order.user.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to cancel this order",
+      });
+    }
+
+    order.status = "CANCELLED";
+    await order.save();
+
     res.status(200).json({
       success: true,
       message: "Order cancelled successfully",
-      data: { id: req.params.id },
+      data: order,
     });
   } catch (error) {
     console.error("Error cancelling order:", error);
@@ -153,10 +201,45 @@ export const cancelOrder = async (req, res) => {
 
 export const updateOrderAddress = async (req, res) => {
   try {
+    const orderId = req.params.id;
+    const { address } = req.body;
+    const userId = req.user.id;
+
+    const order = await OrderModel.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.user.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to update this order",
+      });
+    }
+
+    if (
+      order.status === "CANCELLED" ||
+      order.status === "DELIVERED" ||
+      order.status === "SHIPPED"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Order address cannot be updated as the order is already cancelled, delivered, or shipped",
+      });
+    }
+
+    order.shippingAddress = address;
+    await order.save();
+
     res.status(200).json({
       success: true,
       message: "Order address updated successfully",
-      data: { id: req.params.id },
+      data: order,
     });
   } catch (error) {
     console.error("Error updating order address:", error);
