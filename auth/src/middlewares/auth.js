@@ -3,7 +3,7 @@ import redis from "../db/redis.js";
 
 // Middleware to protect routes and ensure the user is authenticated
 export const authenticate = async (req, res, next) => {
-  const token = req.cookies.token;
+  const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
 
   if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
